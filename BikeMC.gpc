@@ -1,0 +1,123 @@
+#pragma METAINFO("BikeMC", 2, 0, "Tiernan DeFranco")
+#include <switch.gph>
+#include <keyboard.gph>
+#include <mouse.gph>
+#define SECONDS (ms/1000)
+
+
+//Also need a 3rd joycon at the front of the bike running reWASD for detecting Y-Gyro. May be possible to use a second titan two and script that just detects Y gyro and maps to mouse
+
+uint32 ms;
+bool controllerON;
+int speed;
+int top;
+int bottom;
+
+init {
+  bool output;
+  port_status(PORT_USB_C, &output, NULL);
+  if (output != PROTOCOL_HID) port_connect(PORT_USB_C, PROTOCOL_HID);
+  keymapping();
+	mousemapping();
+	speed = 0;
+	top = 0;
+	bottom = 0;
+	ms = 0;
+
+}
+main {
+	ms += elapsed_time();
+	
+	combo_run(Mouse);
+
+	key_passthru();
+	mouse_passthru();
+ 
+	
+
+	if(is_active(SWITCH_Y))
+			{
+				mouse_set(MBUTTON_2, TRUE);
+			}
+
+	if(is_active(SWITCH_PLUS)) 
+			{
+				mouse_set(MBUTTON_1, TRUE);
+			}
+			if(is_active(SWITCH_HOME)) 
+			{
+				key_set(KEY_ESCAPE, TRUE);
+			}
+	//Inventory
+  if(is_active(SWITCH_B)) 
+	{
+    key_set(KEY_E, TRUE);
+	}
+	if(is_active(SWITCH_X)) 
+	{
+   mouse_set(MWHEEL_FORWARD, TRUE);
+	}
+	// JUMP
+	if(is_active(SWITCH_A)) 
+	{
+			key_set(KEY_SPACEBAR, TRUE);
+	}
+ if(is_active(SWITCH_ZR)) 
+	{
+    key_set(KEY_LEFTSHIFT, TRUE);
+	}
+			
+
+//Wheel Movement Calculate Speed
+	
+	if(get_val(ACCEL_1_X) < -20.0)
+		{
+			if (bottom > top)
+			{
+		top += 1;
+			}
+				
+		}
+		
+	if(get_val(ACCEL_1_X) > 20.0)
+		{
+		bottom += 1;
+				
+		}
+	if (SECONDS >= 1) 
+		{
+			top = 0;
+			bottom = 0;
+			ms = 0;
+		}
+		speed = top;
+	if (speed <= 3 && speed >= 2) 
+	{
+		key_set(KEY_W, TRUE);
+	}
+	if (speed > 3)
+	{
+		key_set(KEY_R, TRUE); //assuming your sprint key is 'R'
+		key_set(KEY_W, TRUE);
+	}
+
+}
+
+combo Mouse {
+		fix32 m = get_val(STICK_1_Y);
+		fix32 s = (m >= 0.0) ? 1.0 : -1.0;
+		m = abs(m);
+    m = (m >= 10.0) ? ((m - 10.0) * 0.08) : 0.0;
+		mouse_set(MOUSE_X, (int)(-m * s));
+	
+	
+		m = get_val(STICK_1_X);
+		s = (m >= 0.0) ? 1.0 : -1.0;
+		m = abs(m);
+		m = (m >= 10.0) ? ((m - 10.0) * 0.08) : 0.0;
+		mouse_set(MOUSE_Y, (int)(m * s));
+		wait(0);
+	 
+		wait(6);
+			}
+			
